@@ -47,7 +47,12 @@ export default function SearchWallet() {
             setWalletData(data.data);
             
         } catch (err) {
-            setError(err.message);
+            // Type-safe error handling
+            if (err instanceof Error) {
+                setError(err.message);
+            } else {
+                setError('An unexpected error occurred');
+            }
         } finally {
             setLoading(false);
         }
