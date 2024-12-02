@@ -22,6 +22,17 @@ interface WalletData {
     risk_metrics: any;
 }
 
+interface FilterCriteria {
+    minRoi: number;
+    minWinRate: number;
+    minTrades: number;
+    minVolume: number;
+    minProfit: number;
+    riskLevel: string;
+    tokenType: string;
+    timeFrame: string;
+}
+
 export default function Wallets() {
     const [wallets, setWallets] = useState<WalletData[]>([]);
     const [loading, setLoading] = useState(true);
@@ -29,10 +40,15 @@ export default function Wallets() {
     const [searchTerm, setSearchTerm] = useState('');
     const [refreshing, setRefreshing] = useState(false);
     const [showFilters, setShowFilters] = useState(false);
-    const [filterCriteria, setFilterCriteria] = useState({
+    const [filterCriteria, setFilterCriteria] = useState<FilterCriteria>({
         minRoi: 20,
         minWinRate: 50,
-        minTrades: 20
+        minTrades: 20,
+        minVolume: 0,
+        minProfit: 0,
+        riskLevel: 'all',
+        tokenType: 'all',
+        timeFrame: '7d'
     });
 
     const fetchWallets = async (showRefreshAnimation = true) => {
@@ -42,7 +58,17 @@ export default function Wallets() {
             }
             setError(null);
 
-            const response = await fetch(`http://localhost:8000/wallets/top?min_roi=${filterCriteria.minRoi}&min_win_rate=${filterCriteria.minWinRate}&min_trades=${filterCriteria.minTrades}`);
+            const response = await fetch(
+                `http://localhost:8000/wallets/top?` + 
+                `min_roi=${filterCriteria.minRoi}` +
+                `&min_win_rate=${filterCriteria.minWinRate}` +
+                `&min_trades=${filterCriteria.minTrades}` +
+                `&min_volume=${filterCriteria.minVolume}` +
+                `&min_profit=${filterCriteria.minProfit}` +
+                `&risk_level=${filterCriteria.riskLevel}` +
+                `&token_type=${filterCriteria.tokenType}` +
+                `&time_frame=${filterCriteria.timeFrame}`
+            );
             
             if (!response.ok) {
                 throw new Error('Failed to fetch wallets');
@@ -50,8 +76,12 @@ export default function Wallets() {
 
             const data = await response.json();
             setWallets(data);
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err) {
+            if (err instanceof Error) {
+                setError(err.message);
+            } else {
+                setError('An unexpected error occurred');
+            }
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -155,7 +185,6 @@ export default function Wallets() {
                                     key={wallet.address} 
                                     wallet={wallet}
                                     onRefresh={() => {
-                                        // Implement individual wallet refresh
                                         fetchWallets(true);
                                     }}
                                 />
@@ -210,4 +239,4 @@ export default function Wallets() {
             </main>
         </div>
     );
-}
+} 
